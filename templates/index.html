@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI PDF Query</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+      form {
+        margin: 20px auto;
+        width: 50%;
+      }
+      input,
+      button {
+        margin: 10px;
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Upload PDF & Query AI</h1>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" id="pdfFile" accept=".pdf" required />
+      <button type="submit">Upload PDF</button>
+    </form>
+
+    <p id="uploadStatus"></p>
+
+    <form id="queryForm" style="display: none">
+      <p>You can ask you questions here. In return you will get response from your uploaded file and internet using AI.</p>
+      <input type="text" id="queryInput" placeholder="Ask something..." required/>
+      <button type="submit">Get AI Response</button>
+    </form>
+
+    <p id="aiResponse"></p>
+
+    <script>
+      let uploadedFilename = "";
+
+      document.getElementById("uploadForm").onsubmit = async (e) => {
+        e.preventDefault();
+        let fileInput = document.getElementById("pdfFile").files[0];
+
+        if (!fileInput) return;
+        let formData = new FormData();
+        formData.append("file", fileInput);
+
+        let response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
+        });
+        let result = await response.json();
+        document.getElementById("uploadStatus").innerText = result.message;
+
+        if (response.ok) {
+          uploadedFilename = result.filename;
+          document.getElementById("queryForm").style.display = "block";
+        }
+      };
+
+      document.getElementById("queryForm").onsubmit = async (e) => {
+        e.preventDefault();
+        let query = document.getElementById("queryInput").value;
+
+        let response = await fetch("/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: query, filename: uploadedFilename }),
+        });
+
+        let result = await response.json();
+        document.getElementById("aiResponse").innerText = result.response;
+      };
+    </script>
+  </body>
+</html>
